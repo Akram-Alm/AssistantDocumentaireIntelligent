@@ -1,0 +1,63 @@
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "AkramOllama2024!###"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    networks:
+      - assistant-network
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - assistant-network
+
+  ragservice:
+    build:
+      context: ./AssistantDocumentaire1.RagService
+    environment:
+      OLLAMA_HOST: "http://ollama:11434"
+    ports:
+      - "8001:8001"
+    volumes:
+      - uploaded_files:/app/UploadedFiles
+      - rag_index:/app/index
+    depends_on:
+      - ollama
+    networks:
+      - assistant-network
+
+  webapp:
+    build:
+      context: ./Assistant2
+    environment:
+      ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=AssistantDocumentaireDb;User Id=sa;Password=AkramOllama2024!###;TrustServerCertificate=True"
+      RagServiceUrl: "http://ragservice:8001"
+      StoragePath: "/app/UploadedFiles"
+    ports:
+      - "8080:8080"
+    volumes:
+      - uploaded_files:/app/UploadedFiles
+    depends_on:
+      - sqlserver
+      - ragservice
+    networks:
+      - assistant-network
+
+volumes:
+  sqlserver_data:
+  ollama_data:
+  uploaded_files:
+  rag_index:
+
+networks:
+  assistant-network:
+    driver: bridge

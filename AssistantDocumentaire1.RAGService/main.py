@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from langdetect import detect
 from pydantic import BaseModel
 from pypdf import PdfReader
 from typing import List
@@ -154,41 +155,122 @@ def reindexer_tout(req: ReindexerRequest):
         "erreurs": erreurs
     }
 
-
 @app.post("/ask")
 def poser_question(req: AskRequest):
-    if index.ntotal == 0:
-        return {"reponse": "Aucun document indexe pour le moment."}
 
+    if index.ntotal == 0:
+        return {
+            "reponse": "Aucun document indexé pour le moment."
+        }
+
+    # Encodage de la question
     vecteur_question = model.encode([req.question]).astype("float32")
+
     k = min(3, index.ntotal)
+
     distances, indices = index.search(vecteur_question, k)
 
-    contexte_morceaux = [chunks_store[i]["texte"] for i in indices[0]]
-    contexte = "\n\n".join(contexte_morceaux)
+    contexte = ""
 
-    prompt = f"""Tu es un assistant documentaire multilingue.
-Reponds UNIQUEMENT a partir du contexte ci-dessous.
+    for rang, indice in enumerate(indices[0], start=1):
 
-Regle tres importante : reponds TOUJOURS dans la meme langue que la question.
-Si la question est ecrite en arabe, ta reponse doit etre entierement en arabe.
-Si la question est ecrite en francais, ta reponse doit etre entierement en francais.
-Ne traduis jamais la question dans une autre langue avant de repondre.
+        chunk = chunks_store[indice]
 
-CONTEXTE:
+        contexte += f"""
+Document {rang}
+
+Titre : {chunk["titre"]}
+
+{chunk["texte"]}
+
+----------------------------------------
+"""
+
+    # Détection de la langue
+    try:
+        langue = detect(req.question)
+    except:
+        langue = "fr"
+
+    if langue == "fr":
+        instruction_langue = "Réponds uniquement en français."
+        reponse_absente = "Je ne trouve pas cette information dans les documents fournis."
+
+    elif langue == "ar":
+        instruction_langue = "أجب باللغة العربية فقط."
+        reponse_absente = "لم أجد هذه المعلومة في الوثائق."
+
+    elif langue == "en":
+        instruction_langue = "Answer only in English."
+        reponse_absente = "I cannot find this information in the provided documents."
+
+    else:
+        instruction_langue = "Réponds dans la langue de la question."
+        reponse_absente = "Je ne trouve pas cette information."
+
+    system_prompt = f"""
+Tu es un assistant documentaire intelligent.
+
+RÈGLES :
+
+1. {instruction_langue}
+
+2. Utilise UNIQUEMENT le contexte fourni.
+
+3. N'invente jamais une réponse.
+
+4. Si l'information n'existe pas dans le contexte, répond exactement :
+
+{reponse_absente}
+
+5. Ne change jamais la langue.
+
+6. Sois clair et précis.
+
+7. Si plusieurs documents répondent à la question, combine leurs informations.
+"""
+
+    user_prompt = f"""
+CONTEXTE :
+
 {contexte}
 
-QUESTION:
+QUESTION :
+
 {req.question}
+"""
 
-Reponse (dans la meme langue que la question) :"""
+    try:
 
-    reponse = client_ollama.chat(
-        model="qwen2.5:3b",
-        messages=[{"role": "user", "content": prompt}],
-        options={"num_predict": 300, "num_ctx": 2048}
-    )
-    return {"reponse": reponse["message"]["content"]}
+        reponse = client_ollama.chat(
+            model="qwen2.5:3b",
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt
+                },
+                {
+                    "role": "user",
+                    "content": user_prompt
+                }
+            ],
+            options={
+                "temperature": 0,
+                "num_ctx": 4096,
+                "num_predict": 400,
+                "top_p": 0.9
+            }
+        )
+
+        return {
+            "reponse": reponse["message"]["content"]
+        }
+
+    except Exception as e:
+
+        return {
+            "reponse": f"Erreur Ollama : {str(e)}"
+        }
 
 
 @app.get("/health")

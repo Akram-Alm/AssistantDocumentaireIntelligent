@@ -1,0 +1,127 @@
+﻿@model List<AssistantDocumentaire1.Models.Document>
+
+@{
+    ViewData["Title"] = "Documents";
+}
+
+@functions {
+    string FormatTaille(long octets)
+    {
+        double mo = octets / (1024.0 * 1024.0);
+        return mo.ToString("0.0") + " MB";
+    }
+}
+
+
+<h1 class="page-title">Assistant Documentaire Intelligent</h1>
+<p class="page-subtitle">Ajouter vos documents PDF</p>
+
+@if (TempData["Succes"] != null)
+{
+    <div class="alert-banner success">@TempData["Succes"]</div>
+}
+@if (TempData["Erreur"] != null)
+{
+    <div class="alert-banner error">@TempData["Erreur"]</div>
+}
+<form asp-action="Upload" method="post" enctype="multipart/form-data" id="uploadForm">
+    <label for="fileInput" class="dropzone" id="dropzone">
+        <div class="dropzone-text">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 16V4M12 4l-4 4M12 4l4 4" stroke-linecap="round" stroke-linejoin="round" /><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke-linecap="round" /></svg>
+            <div>
+                <strong>Drag &amp; Drop Files Here</strong>
+                Faites glisser et déposez des fichiers PDF ici ou
+            </div>
+        </div>
+        <span class="btn-browse">Parcourir vos Fichiers</span>
+        <input type="file" id="fileInput" name="fichiers" multiple accept=".pdf" hidden />
+    </label>
+</form>
+
+<div class="documents-card">
+    <div class="documents-card-header">
+        <h2>Liste des Documents Uploadés</h2>
+        <form asp-action="ReindexerTout" method="post" onsubmit="return confirm('Ré-indexer tous les documents ? Cela peut prendre du temps.');">
+            <button type="submit" class="btn-reindex">Ré-indexer tout</button>
+        </form>
+    </div>
+    <table class="documents-table">
+        <thead>
+            <tr>
+                <th>Nom du Document</th>
+                <th>Taille</th>
+                <th>Date d'Ajout</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var doc in Model)
+            {
+                <tr>
+                    <td class="doc-name">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2h9l5 5v15H6z" /><path d="M15 2v5h5" /></svg>
+                        @doc.Titre
+                    </td>
+                    <td>@FormatTaille(doc.TailleOctets)</td>
+                    <td>@doc.DateAjout.ToString("dd MMM yyyy")</td>
+                    <td class="doc-actions">
+                        <form asp-action="Supprimer" method="post" onsubmit="return confirm('Supprimer ce document ?');">
+                            <input type="hidden" name="id" value="@doc.Id" />
+                            <button type="submit" class="delete" title="Supprimer">
+                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14" /></svg>
+                            </button>
+                        </form>
+                        <button type="button" title="Renommer" onclick="renommerDocument(@doc.Id, '@doc.Titre')">
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16.5 3.5l4 4L7 21H3v-4z" /></svg>
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<a href="Chat" class="floating-chat-btn">
+    Allez à Chatbot
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 11.5a8.4 8.4 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.4 8.4 0 01-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.4 8.4 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" /></svg>
+</a>
+
+@section Scripts {
+    <script>
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('fileInput');
+        const uploadForm = document.getElementById('uploadForm');
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) uploadForm.submit();
+        });
+
+        ['dragover', 'dragenter'].forEach(evt =>
+            dropzone.addEventListener(evt, e => {
+                e.preventDefault();
+                dropzone.classList.add('dragover');
+            })
+        );
+        ['dragleave', 'drop'].forEach(evt =>
+            dropzone.addEventListener(evt, e => {
+                e.preventDefault();
+                dropzone.classList.remove('dragover');
+            })
+        );
+        dropzone.addEventListener('drop', e => {
+            fileInput.files = e.dataTransfer.files;
+            uploadForm.submit();
+        });
+
+        function renommerDocument(id, titreActuel) {
+            const nouveauTitre = prompt("Nouveau nom du document :", titreActuel);
+            if (nouveauTitre && nouveauTitre.trim() !== "") {
+                fetch('/Documents/Renommer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: id, nouveauTitre: nouveauTitre })
+                }).then(() => location.reload());
+            }
+        }
+    </script>
+}

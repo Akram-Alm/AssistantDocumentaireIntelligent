@@ -25,11 +25,14 @@ services:
       context: ./AssistantDocumentaire1.RagService
     environment:
       OLLAMA_HOST: "http://ollama:11434"
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
     ports:
       - "8001:8001"
     volumes:
       - uploaded_files:/app/UploadedFiles
       - rag_index:/app/index
+      - C:/Users/akram/.cache/huggingface:/root/.cache/huggingface
     depends_on:
       - ollama
     networks:
@@ -57,6 +60,7 @@ volumes:
   ollama_data:
   uploaded_files:
   rag_index:
+  hf_cache:
 
 networks:
   assistant-network:

@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  dotnet-build-test:
+    name: Build et tests .NET
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restaurer les dépendances (webapp)
+        run: dotnet restore
+        working-directory: ./Assistant2
+
+      - name: Compiler (webapp)
+        run: dotnet build --no-restore --configuration Release
+        working-directory: ./Assistant2
+
+      - name: Restaurer les dépendances (tests)
+        run: dotnet restore
+        working-directory: ./AssistantDocumentaire1.Tests
+
+      - name: Exécuter les tests
+        run: dotnet test --configuration Release --verbosity normal
+        working-directory: ./AssistantDocumentaire1.Tests
+
+  python-build-test:
+    name: Build et tests Python
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Installer les dépendances
+        run: pip install -r requirements.txt
+        working-directory: ./AssistantDocumentaire1.RAGService
+
+      - name: Exécuter les tests
+        run: pytest -v
+        working-directory: ./AssistantDocumentaire1.RAGService

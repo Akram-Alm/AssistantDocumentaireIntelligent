@@ -361,3 +361,10 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+__pycache__/
+*.pyc
+AssistantDocumentaire1.RAGService/chunks.pkl
+AssistantDocumentaire1.RAGService/faiss_index.bin
+Assistant2/UploadedFiles/*
+!Assistant2/UploadedFiles/.gitkeep

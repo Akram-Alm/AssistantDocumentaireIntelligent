@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("AssistantDocumentaire1.Tests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+83966710bb6c84cbca0b43878056492d1a59a4bf")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+12ec5c1c093ba47de916d2bf3258a4f6553a3022")]
 [assembly: System.Reflection.AssemblyProductAttribute("AssistantDocumentaire1.Tests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("AssistantDocumentaire1.Tests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

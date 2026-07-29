@@ -71,3 +71,39 @@ jobs:
 
       - name: Construire l'image ragservice
         run: docker build -t assistant-ragservice:ci ./AssistantDocumentaire1.RAGService
+  docker-publish:
+    name: Publication des images sur GHCR
+    runs-on: ubuntu-latest
+    needs: [docker-build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+
+      - name: Se connecter à GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Construire et taguer l'image webapp
+        run: |
+          docker build -t ghcr.io/${{ github.repository_owner }}/assistant-webapp:latest \
+                       -t ghcr.io/${{ github.repository_owner }}/assistant-webapp:${{ github.sha }} \
+                       ./Assistant2
+
+      - name: Construire et taguer l'image ragservice
+        run: |
+          docker build -t ghcr.io/${{ github.repository_owner }}/assistant-ragservice:latest \
+                       -t ghcr.io/${{ github.repository_owner }}/assistant-ragservice:${{ github.sha }} \
+                       ./AssistantDocumentaire1.RAGService
+
+      - name: Publier l'image webapp
+        run: |
+          docker push ghcr.io/${{ github.repository_owner }}/assistant-webapp:latest
+          docker push ghcr.io/${{ github.repository_owner }}/assistant-webapp:${{ github.sha }}
+
+      - name: Publier l'image ragservice
+        run: |
+          docker push ghcr.io/${{ github.repository_owner }}/assistant-ragservice:latest
+          docker push ghcr.io/${{ github.repository_owner }}/assistant-ragservice:${{ github.sha }}

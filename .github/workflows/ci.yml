@@ -88,22 +88,22 @@ jobs:
 
       - name: Construire et taguer l'image webapp
         run: |
-          docker build -t ghcr.io/${{ github.repository_owner }}/assistant-webapp:latest \
-                       -t ghcr.io/${{ github.repository_owner }}/assistant-webapp:${{ github.sha }} \
+          docker build -t ghcr.io/akram-alm/assistant-webapp:latest \
+                       -t ghcr.io/akram-alm/assistant-webapp:${{ github.sha }} \
                        ./Assistant2
 
       - name: Construire et taguer l'image ragservice
         run: |
-          docker build -t ghcr.io/${{ github.repository_owner }}/assistant-ragservice:latest \
-                       -t ghcr.io/${{ github.repository_owner }}/assistant-ragservice:${{ github.sha }} \
+          docker build -t ghcr.io/akram-alm/assistant-ragservice:latest \
+                       -t ghcr.io/akram-alm/assistant-ragservice:${{ github.sha }} \
                        ./AssistantDocumentaire1.RAGService
 
       - name: Publier l'image webapp
         run: |
-          docker push ghcr.io/${{ github.repository_owner }}/assistant-webapp:latest
-          docker push ghcr.io/${{ github.repository_owner }}/assistant-webapp:${{ github.sha }}
+          docker push ghcr.io/akram-alm/assistant-webapp:latest
+          docker push ghcr.io/akram-alm/assistant-webapp:${{ github.sha }}
 
       - name: Publier l'image ragservice
         run: |
-          docker push ghcr.io/${{ github.repository_owner }}/assistant-ragservice:latest
-          docker push ghcr.io/${{ github.repository_owner }}/assistant-ragservice:${{ github.sha }}
+          docker push ghcr.io/akram-alm/assistant-ragservice:latest
+          docker push ghcr.io/akram-alm/assistant-ragservice:${{ github.sha }}
